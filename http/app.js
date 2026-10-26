@@ -21,17 +21,26 @@
 // 500 series -> Server Error (500 -> Internal Server Error);
 
 const http = require("http");
+const url = require("url");
 
 const server = http.createServer();
 
+let todoArray = [];
+
 server.on("request", (request, response) => {
 
-    const requestedPath = request.url;
+    const urlObj = url.parse(request.url, true);
+    const method = request.method;
+
+    const requestedPath = urlObj.pathname;
+
+    console.log(urlObj.query);
 
     if (requestedPath === "/") {
         const resObj = JSON.stringify({
             ok: true,
-            message: "Requested home page"
+            message: "Requested home page",
+            query: urlObj.query
         })
         response.writeHead(200, {
             "content-type": "application/json"
@@ -51,6 +60,37 @@ server.on("request", (request, response) => {
             "content-type": "text/plan"
         });
         return response.end("Contact Page");
+    }
+
+    if (requestedPath === "/api/todo" && method === "POST") {
+        const { todo } = urlObj.query;
+        todoArray.push(todo);
+        const res = JSON.stringify({
+            ok: true,
+            message: "Todo added successfully",
+            todo
+        })
+        return response.end(res);
+    }
+
+    if (requestedPath === "/api/todo" && method === "GET") {
+        const res = JSON.stringify({
+            ok: true,
+            message: "Todo retrieved successfully",
+            todos: todoArray
+        })
+        return response.end(res);
+    }
+
+    if (requestedPath === "/api/todo/single" && method === "GET") {
+        const { id } = urlObj.query;
+        const todo = todoArray[id];
+        const res = JSON.stringify({
+            ok: true,
+            message: "Todo retrieved successfully",
+            todo
+        })
+        return response.end(res);
     }
 
     response.writeHead(404, {
